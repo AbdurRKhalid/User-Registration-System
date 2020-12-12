@@ -1,6 +1,7 @@
 const User = require("../Models/User");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
+const jsonwebtoken = require("jsonwebtoken");
 module.exports.signUp = function signUpUser(req, res, next) {
   User.find({ email: req.body.email })
     .exec()
@@ -42,6 +43,36 @@ module.exports.signUp = function signUpUser(req, res, next) {
     .catch((error) => {
       res.status(404).json({
         message: "Error Occurred!",
+        error: error,
+      });
+    });
+};
+
+module.exports.login = function login(req, res, next) {
+  User.findOne({ email: req.body.email })
+    .exec()
+    .then((result) => {
+      bcrypt.compare(req.body.password, result.password, (error, result) => {
+        if (error) {
+          res.status(404).json({
+            message: "Passowrd is Incorrect!",
+          });
+        } else {
+          const token = jsonwebtoken.sign(
+            { email: result.email },
+            "RANDOMAPIKEY",
+            { expiresIn: "1h" }
+          );
+          res.status(200).json({
+            message: "User LoggedIn Successfully!",
+            token: token,
+          });
+        }
+      });
+    })
+    .catch((error) => {
+      res.status(404).json({
+        message: "Error Occurred While Logging!",
         error: error,
       });
     });
